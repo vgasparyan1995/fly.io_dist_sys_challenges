@@ -4,7 +4,7 @@ namespace {
 
 template <typename T>
 std::optional<T> operator||(std::optional<T> lhs, std::optional<T> rhs) {
-  return lhs ? lhs : rhs;
+  return lhs ? std::move(lhs) : std::move(rhs);
 }
 
 } // namespace
