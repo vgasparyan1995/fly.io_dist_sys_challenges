@@ -11,46 +11,43 @@ std::optional<T> operator||(std::optional<T> lhs, std::optional<T> rhs) {
 } // namespace
 
 std::optional<Body> InitFrom(const Json& j_init) {
-  if (!j_init.contains("type") || j_init["type"] != "init" ||
-      !j_init.contains("node_id") || !j_init.contains("node_ids")) {
+  if (j_init["type"] != "init" || !j_init.contains("node_id") ||
+      !j_init.contains("node_ids")) {
     return {};
   }
   return {Init{.node_id = j_init["node_id"], .node_ids = j_init["node_ids"]}};
 }
 
 std::optional<Body> InitOkFrom(const Json& j_init_ok) {
-  if (!j_init_ok.contains("type") || j_init_ok["type"] != "init_ok") {
+  if (j_init_ok["type"] != "init_ok") {
     return {};
   }
   return InitOk{};
 }
 
 std::optional<Body> EchoFrom(const Json& j_echo) {
-  if (!j_echo.contains("echo") || j_echo["type"] != "echo" ||
-      !j_echo.contains("echo")) {
+  if (j_echo["type"] != "echo" || !j_echo.contains("echo")) {
     return {};
   }
   return Echo{.echo = j_echo["echo"]};
 }
 
 std::optional<Body> EchoOkFrom(const Json& j_echo_ok) {
-  if (!j_echo_ok.contains("type") || j_echo_ok["type"] != "echo_ok" ||
-      !j_echo_ok.contains("echo")) {
+  if (j_echo_ok["type"] != "echo_ok" || !j_echo_ok.contains("echo")) {
     return {};
   }
   return EchoOk{.echo = j_echo_ok["echo"]};
 }
 
 std::optional<Body> GenerateFrom(const Json& j_generate) {
-  if (!j_generate.contains("type") || j_generate["type"] != "generate") {
+  if (j_generate["type"] != "generate") {
     return {};
   }
   return Generate{};
 }
 
 std::optional<Body> GenerateOkFrom(const Json& j_generate_ok) {
-  if (!j_generate_ok.contains("type") ||
-      j_generate_ok["type"] != "generate_ok" || !j_generate_ok.contains("id")) {
+  if (j_generate_ok["type"] != "generate_ok" || !j_generate_ok.contains("id")) {
     return {};
   }
   return GenerateOk{.id = j_generate_ok["id"]};
