@@ -10,7 +10,7 @@
 
 namespace {
 
-std::optional<Json> Read() {
+std::optional<Json> ReadFromStdIn() {
   std::string raw_msg;
   if (!std::getline(std::cin, raw_msg)) {
     return {};
@@ -23,7 +23,7 @@ std::optional<Json> Read() {
   return json_msg;
 }
 
-void Write(Json msg) { std::cout << msg.dump() << '\n'; }
+void WriteToStdOut(Json msg) { std::cout << msg.dump() << '\n'; }
 
 } // namespace
 
@@ -41,8 +41,12 @@ bool MaelstromNode::Initialize() {
 }
 
 std::optional<Message> MaelstromNode::Receive() {
-  if (auto msg = Read(); msg) {
-    return MessageFrom(*msg);
+  if (auto j_msg = ReadFromStdIn(); j_msg) {
+    auto msg = MessageFrom(*j_msg);
+    if (!msg) {
+      std::cerr << "Unsupported request: " << j_msg->dump() << '\n';
+    }
+    return msg;
   }
   return {};
 }
@@ -53,7 +57,7 @@ void MaelstromNode::Send(Message msg) {
     msg.in_reply_to = msg.msg_id;
     msg.msg_id = msg_id_++;
   }
-  Write(Serialize(msg));
+  WriteToStdOut(Serialize(msg));
 }
 
 std::string_view MaelstromNode::Id() const { return id_; }

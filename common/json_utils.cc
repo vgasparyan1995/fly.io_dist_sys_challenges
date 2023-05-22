@@ -1,4 +1,5 @@
 #include "json_utils.h"
+#include "common/message.h"
 
 namespace {
 
@@ -55,6 +56,48 @@ std::optional<Body> GenerateOkFrom(const Json& j_generate_ok) {
   return GenerateOk{.id = j_generate_ok["id"]};
 }
 
+std::optional<Body> BroadcastFrom(const Json& j_broadcast) {
+  if (j_broadcast["type"] != "broadcast" || !j_broadcast.contains("message")) {
+    return {};
+  }
+  return Broadcast{.message = j_broadcast["message"]};
+}
+
+std::optional<Body> BroadcastOkFrom(const Json& j_broadcast_Ok) {
+  if (j_broadcast_Ok["type"] != "broadcast_ok") {
+    return {};
+  }
+  return BroadcastOk{};
+}
+
+std::optional<Body> ReadFrom(const Json& j_read) {
+  if (j_read["type"] != "read") {
+    return {};
+  }
+  return Read{};
+}
+
+std::optional<Body> ReadOkFrom(const Json& j_read_ok) {
+  if (j_read_ok["type"] != "read_ok" || !j_read_ok.contains("messages")) {
+    return {};
+  }
+  return ReadOk{.messages = j_read_ok["messages"]};
+}
+
+std::optional<Body> TopologyFrom(const Json& j_topology) {
+  if (j_topology["type"] != "topology" || !j_topology.contains("topology")) {
+    return {};
+  }
+  return Topology{.topology = j_topology["topology"]};
+}
+
+std::optional<Body> TopologyOkFrom(const Json& j_topology_ok) {
+  if (j_topology_ok["type"] != "topology_ok") {
+    return {};
+  }
+  return TopologyOk{};
+}
+
 std::optional<Message> MessageFrom(const Json& j_msg) {
   if (!j_msg.contains("src") || !j_msg.contains("dest") ||
       !j_msg.contains("body")) {
@@ -70,9 +113,14 @@ std::optional<Message> MessageFrom(const Json& j_msg) {
   if (j_body.contains("in_reply_to")) {
     msg.in_reply_to = j_body["in_reply_to"].get<int>();
   }
-  std::optional<Body> body = InitFrom(j_body) || InitOkFrom(j_body) ||
-                             EchoFrom(j_body) || EchoOkFrom(j_body) ||
-                             GenerateFrom(j_body) || GenerateOkFrom(j_body);
+  if (!j_body.contains("type")) {
+    return {};
+  }
+  std::optional<Body> body =
+      InitFrom(j_body) || InitOkFrom(j_body) || EchoFrom(j_body) ||
+      EchoOkFrom(j_body) || GenerateFrom(j_body) || GenerateOkFrom(j_body) ||
+      BroadcastFrom(j_body) || BroadcastOkFrom(j_body) || ReadFrom(j_body) ||
+      ReadOkFrom(j_body) || TopologyFrom(j_body) || TopologyOkFrom(j_body);
   if (!body) {
     return {};
   }
@@ -99,6 +147,28 @@ Json Serialize(const Generate& generate) { return {{"type", "generate"}}; }
 
 Json Serialize(const GenerateOk& generate_ok) {
   return {{"type", "generate_ok"}, {"id", generate_ok.id}};
+}
+
+Json Serialize(const Broadcast& broadcast) {
+  return {{"type", "broadcast"}, {"message", broadcast.message}};
+}
+
+Json Serialize(const BroadcastOk& broadcast_ok) {
+  return {{"type", "broadcast_ok"}};
+}
+
+Json Serialize(const Read& read) { return {{"type", "read"}}; }
+
+Json Serialize(const ReadOk& read_ok) {
+  return {{"type", "read_ok"}, {"messages", read_ok.messages}};
+}
+
+Json Serialize(const Topology& topology) {
+  return {{"type", "topology"}, {"topology", topology.topology}};
+}
+
+Json Serialize(const TopologyOk& topology_ok) {
+  return {{"type", "topology_ok"}};
 }
 
 Json Serialize(const Body& body) {

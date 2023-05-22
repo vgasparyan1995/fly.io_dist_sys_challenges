@@ -2,8 +2,13 @@
 
 #include <optional>
 #include <string>
+#include <unordered_map>
+#include <unordered_set>
 #include <variant>
 #include <vector>
+
+template <typename T>
+using AdjacencyList = std::unordered_map<T, std::unordered_set<T>>;
 
 struct Init {
   std::string node_id;
@@ -20,10 +25,27 @@ struct EchoOk {
 
 struct Generate {};
 struct GenerateOk {
-  size_t id;
+  size_t id = 0;
 };
 
-using Body = std::variant<Init, InitOk, Echo, EchoOk, Generate, GenerateOk>;
+struct Broadcast {
+  int message = 0;
+};
+struct BroadcastOk {};
+
+struct Read {};
+struct ReadOk {
+  std::vector<int> messages;
+};
+
+struct Topology {
+  AdjacencyList<std::string> topology;
+};
+struct TopologyOk {};
+
+using Body =
+    std::variant<Init, InitOk, Echo, EchoOk, Generate, GenerateOk, Broadcast,
+                 BroadcastOk, Read, ReadOk, Topology, TopologyOk>;
 
 struct Message {
   std::string src;
