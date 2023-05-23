@@ -12,13 +12,24 @@ int main() {
   }
 
   std::unordered_set<int> numbers;
+  std::unordered_set<std::string> neighbors;
+
   while (true) {
     auto msg = node.Receive();
     if (!msg) {
       continue;
     }
     if (auto* broadcast = std::get_if<Broadcast>(&msg->body)) {
-      numbers.insert(broadcast->message);
+      if (numbers.find(broadcast->message) == numbers.end()) {
+        numbers.insert(broadcast->message);
+        Message broadcast_along = {
+            .src = std::string(node.Id()),
+            .body = Broadcast{.message = broadcast->message}};
+        for (const auto& neighbor : neighbors) {
+          broadcast_along.dest = neighbor;
+          node.Send(broadcast_along);
+        }
+      }
       msg->body = BroadcastOk{};
       node.Send(*msg);
     } else if (std::get_if<Read>(&msg->body)) {
@@ -26,13 +37,9 @@ int main() {
           ReadOk{.messages = std::vector<int>(numbers.begin(), numbers.end())};
       node.Send(*msg);
     } else if (auto* topology = std::get_if<Topology>(&msg->body)) {
-      std::cerr << "Received the topology:\n";
-      for (const auto& [node, neighbors] : topology->topology) {
-        std::cerr << node << ": ";
-        for (const auto& neighbor : neighbors) {
-          std::cerr << neighbor << ", ";
-        }
-        std::cerr << '\n';
+      if (auto it = topology->topology.find(std::string(node.Id()));
+          it != topology->topology.end()) {
+        neighbors.insert(it->second.begin(), it->second.end());
       }
       msg->body = TopologyOk{};
       node.Send(*msg);
