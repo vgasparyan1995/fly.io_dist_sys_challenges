@@ -1,4 +1,5 @@
 #include "json_utils.h"
+
 #include "common/message.h"
 
 namespace {
@@ -8,7 +9,7 @@ std::optional<T> operator||(std::optional<T> lhs, std::optional<T> rhs) {
   return lhs ? std::move(lhs) : std::move(rhs);
 }
 
-} // namespace
+}  // namespace
 
 std::optional<Body> InitFrom(const Json& j_init) {
   if (j_init["type"] != "init" || !j_init.contains("node_id") ||

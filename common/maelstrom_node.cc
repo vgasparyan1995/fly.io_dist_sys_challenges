@@ -25,16 +25,19 @@ std::optional<Json> ReadFromStdIn() {
 
 void WriteToStdOut(Json msg) { std::cout << msg.dump() << '\n'; }
 
-} // namespace
+}  // namespace
 
 bool MaelstromNode::Initialize() {
   auto msg = Receive();
-  if (!msg || !std::holds_alternative<Init>(msg->body)) {
+  if (!msg) {
     return false;
   }
-  auto& init = std::get<Init>(msg->body);
-  id_ = std::move(init.node_id);
-  nodes_ = std::move(init.node_ids);
+  auto* init = std::get_if<Init>(&msg->body);
+  if (!init) {
+    return false;
+  }
+  id_ = std::move(init->node_id);
+  nodes_ = std::move(init->node_ids);
   msg->body = InitOk{};
   Send(std::move(*msg));
   return true;

@@ -17,7 +17,7 @@ int main() {
       std::cerr << "Failed parsing the received message.\n";
       continue;
     }
-    if (std::holds_alternative<Generate>(msg->body)) {
+    if (std::get_if<Generate>(&msg->body)) {
       msg->body = GenerateOk{
           .id = std::hash<std::string_view>{}(maelstrom_node.Id()) ^ id++};
       maelstrom_node.Send(*msg);

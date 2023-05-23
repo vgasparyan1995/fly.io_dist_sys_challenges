@@ -15,9 +15,8 @@ int main() {
       std::cerr << "Failed parsing the received message.\n";
       continue;
     }
-    if (std::holds_alternative<Echo>(msg->body)) {
-      const auto& echo = std::get<Echo>(msg->body);
-      msg->body = EchoOk{.echo = echo.echo};
+    if (auto* echo = std::get_if<Echo>(&msg->body)) {
+      msg->body = EchoOk{.echo = echo->echo};
       maelstrom_node.Send(*msg);
       continue;
     }

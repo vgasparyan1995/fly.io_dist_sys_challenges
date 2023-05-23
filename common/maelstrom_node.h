@@ -6,14 +6,22 @@
 #include "message.h"
 
 class MaelstromNode {
-public:
+ public:
+  // The node waits for an "init" message to identify itself and the other
+  // nodes.
   bool Initialize();
-  std::optional<Message> Receive();
+
+  // Sends out a message. If `msg.dest` is the current node, `msg.src`,
+  // `msg.dest` and `in_reply_to` fields will be set appropriately.
   void Send(Message msg);
 
+  // Waits for a message.
+  std::optional<Message> Receive();
+
+  // Node's ID.
   std::string_view Id() const;
 
-private:
+ private:
   int msg_id_ = 0;
   std::string id_;
   std::vector<std::string> nodes_;
