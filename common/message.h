@@ -2,13 +2,10 @@
 
 #include <optional>
 #include <string>
-#include <unordered_map>
-#include <unordered_set>
 #include <variant>
 #include <vector>
 
-template <typename T>
-using AdjacencyList = std::unordered_map<T, std::unordered_set<T>>;
+#include "graph_utils.h"
 
 struct Init {
   std::string node_id;

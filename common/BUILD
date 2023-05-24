@@ -8,6 +8,14 @@ cc_library(
 cc_library(
     name = "message",
     hdrs = ["message.h"],
+    deps = [
+        ":graph_utils",
+    ],
+)
+
+cc_library(
+    name = "graph_utils",
+    hdrs = ["graph_utils.h"],
 )
 
 cc_library(

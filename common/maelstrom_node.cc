@@ -62,5 +62,3 @@ void MaelstromNode::Send(Message msg) {
   }
   WriteToStdOut(Serialize(msg));
 }
-
-std::string_view MaelstromNode::Id() const { return id_; }
