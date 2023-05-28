@@ -1,10 +1,37 @@
 #include <iostream>
 #include <set>
+#include <tuple>
 #include <unordered_set>
+#include <utility>
 #include <variant>
 
+#include "broadcaster.h"
 #include "common/graph_utils.h"
 #include "common/maelstrom_node.h"
+#include "common/message.h"
+
+AdjacencyList<std::string> ConstructTopology(MaelstromNode& maelstrom_node) {
+  auto topology_msg = maelstrom_node.Receive();
+  if (!topology_msg) {
+    return {};
+  }
+  auto* topology = std::get_if<Topology>(&topology_msg->body);
+  if (!topology) {
+    return {};
+  }
+  std::set<Edge<std::string>> edges;
+  for (const auto& [v, us] : topology->topology) {
+    for (const auto& u : us) {
+      if (v > u) {
+        continue;
+      }
+      edges.insert({v, u});
+    }
+  }
+  topology_msg->body = TopologyOk{};
+  maelstrom_node.Send(*topology_msg);
+  return MinimumSpanningTree(std::move(edges));
+}
 
 int main() {
   MaelstromNode node;
@@ -13,8 +40,19 @@ int main() {
     return -1;
   }
 
-  std::unordered_set<int> numbers;
-  AdjacencyList<std::string> node_graph;
+  auto node_graph = ConstructTopology(node);
+  if (node_graph.empty()) {
+    std::cerr << "Failed constructing topology.\n";
+    return -1;
+  }
+
+  std::unordered_set<int> messages;
+  std::unordered_map<std::string, Broadcaster> broadcasters;
+  for (const auto& neighbor : node_graph[node.Id()]) {
+    broadcasters.emplace(std::piecewise_construct,
+                         std::forward_as_tuple(neighbor),
+                         std::forward_as_tuple(node, neighbor));
+  }
 
   while (true) {
     auto msg = node.Receive();
@@ -22,41 +60,33 @@ int main() {
       continue;
     }
     if (auto* broadcast = std::get_if<Broadcast>(&msg->body)) {
-      if (numbers.find(broadcast->message) == numbers.end()) {
-        numbers.insert(broadcast->message);
-        Message broadcast_along = {
-            .src = node.Id(), .body = Broadcast{.message = broadcast->message}};
-        for (const auto& neighbor : node_graph[node.Id()]) {
-          if (neighbor == msg->src) {
-            continue;
-          }
-          broadcast_along.dest = neighbor;
-          node.Send(broadcast_along);
-        }
+      messages.insert(broadcast->message);
+      for (auto& [_, broadcaster] : broadcasters) {
+        std::vector<int> messages = {broadcast->message};
+        broadcaster.AddMessages(messages);
       }
       msg->body = BroadcastOk{};
       node.Send(*msg);
-    } else if (std::get_if<Read>(&msg->body)) {
-      msg->body =
-          ReadOk{.messages = std::vector<int>(numbers.begin(), numbers.end())};
-      node.Send(*msg);
-    } else if (auto* topology = std::get_if<Topology>(&msg->body)) {
-      std::set<Edge<std::string>> edges;
-      for (const auto& [v, us] : topology->topology) {
-        for (const auto& u : us) {
-          if (v > u) {
-            continue;
-          }
-          edges.insert({v, u});
+    } else if (auto* bulk_broadcast = std::get_if<BulkBroadcast>(&msg->body)) {
+      messages.insert(bulk_broadcast->messages.begin(),
+                      bulk_broadcast->messages.end());
+      for (auto& [node, broadcaster] : broadcasters) {
+        if (node == msg->src) {
+          continue;
         }
+        broadcaster.AddMessages(bulk_broadcast->messages);
       }
-      node_graph = MinimumSpanningTree(std::move(edges));
-      msg->body = TopologyOk{};
+      msg->body = BroadcastOk{};
+      node.Send(*msg);
+    } else if (std::get_if<BroadcastOk>(&msg->body)) {
+      if (auto it = broadcasters.find(msg->src); it != broadcasters.end()) {
+        it->second.BroadcastReceived(msg->in_reply_to.value_or(-1));
+      }
+    } else if (std::get_if<Read>(&msg->body)) {
+      msg->body = ReadOk{
+          .messages = std::vector<int>(messages.begin(), messages.end())};
       node.Send(*msg);
     } else {
-      if (std::get_if<BroadcastOk>(&msg->body)) {
-        continue;
-      }
       std::cerr << "Unexpected message.\n";
     }
   }

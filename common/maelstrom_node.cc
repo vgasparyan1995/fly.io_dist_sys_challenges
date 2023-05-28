@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include <memory>
+#include <mutex>
 #include <type_traits>
 #include <utility>
 #include <variant>
@@ -54,11 +55,15 @@ std::optional<Message> MaelstromNode::Receive() {
   return {};
 }
 
-void MaelstromNode::Send(Message msg) {
+int MaelstromNode::Send(Message msg) {
   if (msg.dest == id_) {
     std::swap(msg.src, msg.dest);
     msg.in_reply_to = msg.msg_id;
-    msg.msg_id = msg_id_++;
   }
-  WriteToStdOut(Serialize(msg));
+  {
+    std::scoped_lock l{mu_send_};
+    msg.msg_id = msg_id_++;
+    WriteToStdOut(Serialize(msg));
+  }
+  return msg.msg_id.value_or(-1);
 }

@@ -28,6 +28,9 @@ struct GenerateOk {
 struct Broadcast {
   int message = 0;
 };
+struct BulkBroadcast {
+  std::vector<int> messages;
+};
 struct BroadcastOk {};
 
 struct Read {};
@@ -40,9 +43,9 @@ struct Topology {
 };
 struct TopologyOk {};
 
-using Body =
-    std::variant<Init, InitOk, Echo, EchoOk, Generate, GenerateOk, Broadcast,
-                 BroadcastOk, Read, ReadOk, Topology, TopologyOk>;
+using Body = std::variant<Init, InitOk, Echo, EchoOk, Generate, GenerateOk,
+                          Broadcast, BulkBroadcast, BroadcastOk, Read, ReadOk,
+                          Topology, TopologyOk>;
 
 struct Message {
   std::string src;

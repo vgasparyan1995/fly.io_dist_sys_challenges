@@ -61,6 +61,14 @@ std::optional<Body> BroadcastFrom(const Json& j_broadcast) {
   return Broadcast{.message = j_broadcast["message"]};
 }
 
+std::optional<Body> BulkBroadcastFrom(const Json& j_bulk_broadcast) {
+  if (j_bulk_broadcast["type"] != "bulk_broadcast" ||
+      !j_bulk_broadcast.contains("messages")) {
+    return {};
+  }
+  return BulkBroadcast{.messages = j_bulk_broadcast["messages"]};
+}
+
 std::optional<Body> BroadcastOkFrom(const Json& j_broadcast_Ok) {
   if (j_broadcast_Ok["type"] != "broadcast_ok") {
     return {};
@@ -117,8 +125,9 @@ std::optional<Message> MessageFrom(const Json& j_msg) {
   std::optional<Body> body =
       InitFrom(j_body) || InitOkFrom(j_body) || EchoFrom(j_body) ||
       EchoOkFrom(j_body) || GenerateFrom(j_body) || GenerateOkFrom(j_body) ||
-      BroadcastFrom(j_body) || BroadcastOkFrom(j_body) || ReadFrom(j_body) ||
-      ReadOkFrom(j_body) || TopologyFrom(j_body) || TopologyOkFrom(j_body);
+      BroadcastFrom(j_body) || BulkBroadcastFrom(j_body) ||
+      BroadcastOkFrom(j_body) || ReadFrom(j_body) || ReadOkFrom(j_body) ||
+      TopologyFrom(j_body) || TopologyOkFrom(j_body);
   if (!body) {
     return {};
   }
@@ -149,6 +158,10 @@ Json Serialize(const GenerateOk& generate_ok) {
 
 Json Serialize(const Broadcast& broadcast) {
   return {{"type", "broadcast"}, {"message", broadcast.message}};
+}
+
+Json Serialize(const BulkBroadcast& bulk_broadcast) {
+  return {{"type", "bulk_broadcast"}, {"messages", bulk_broadcast.messages}};
 }
 
 Json Serialize(const BroadcastOk& broadcast_ok) {
