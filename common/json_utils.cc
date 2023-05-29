@@ -1,5 +1,7 @@
 #include "json_utils.h"
 
+#include "common/graph_utils.h"
+#include "common/ids.h"
 #include "common/message.h"
 
 namespace {
@@ -16,7 +18,8 @@ std::optional<Body> InitFrom(const Json& j_init) {
       !j_init.contains("node_ids")) {
     return {};
   }
-  return {Init{.node_id = j_init["node_id"], .node_ids = j_init["node_ids"]}};
+  return Init{.node_id = NodeId(j_init["node_id"]),
+              .node_ids = FromString(j_init["node_ids"])};
 }
 
 std::optional<Body> InitOkFrom(const Json& j_init_ok) {
@@ -58,7 +61,7 @@ std::optional<Body> BroadcastFrom(const Json& j_broadcast) {
   if (j_broadcast["type"] != "broadcast" || !j_broadcast.contains("message")) {
     return {};
   }
-  return Broadcast{.message = j_broadcast["message"]};
+  return Broadcast{.number = j_broadcast["message"]};
 }
 
 std::optional<Body> BulkBroadcastFrom(const Json& j_bulk_broadcast) {
@@ -66,7 +69,7 @@ std::optional<Body> BulkBroadcastFrom(const Json& j_bulk_broadcast) {
       !j_bulk_broadcast.contains("messages")) {
     return {};
   }
-  return BulkBroadcast{.messages = j_bulk_broadcast["messages"]};
+  return BulkBroadcast{.numbers = j_bulk_broadcast["messages"]};
 }
 
 std::optional<Body> BroadcastOkFrom(const Json& j_broadcast_Ok) {
@@ -87,14 +90,21 @@ std::optional<Body> ReadOkFrom(const Json& j_read_ok) {
   if (j_read_ok["type"] != "read_ok" || !j_read_ok.contains("messages")) {
     return {};
   }
-  return ReadOk{.messages = j_read_ok["messages"]};
+  return ReadOk{.numbers = j_read_ok["messages"]};
 }
 
 std::optional<Body> TopologyFrom(const Json& j_topology) {
   if (j_topology["type"] != "topology" || !j_topology.contains("topology")) {
     return {};
   }
-  return Topology{.topology = j_topology["topology"]};
+  AdjacencyList<std::string> str_topology = j_topology["topology"];
+  Topology topology;
+  for (const auto& [v, us] : str_topology) {
+    for (const auto& u : us) {
+      topology.topology[NodeId(v)].insert(NodeId(u));
+    }
+  }
+  return topology;
 }
 
 std::optional<Body> TopologyOkFrom(const Json& j_topology_ok) {
@@ -110,8 +120,8 @@ std::optional<Message> MessageFrom(const Json& j_msg) {
     return {};
   }
   Message msg;
-  j_msg["src"].get_to(msg.src);
-  j_msg["dest"].get_to(msg.dest);
+  msg.src = NodeId(j_msg["src"]);
+  msg.dest = NodeId(j_msg["dest"]);
   const auto& j_body = j_msg["body"];
   if (j_body.contains("msg_id")) {
     msg.msg_id = j_body["msg_id"].get<int>();
@@ -136,8 +146,9 @@ std::optional<Message> MessageFrom(const Json& j_msg) {
 }
 
 Json Serialize(const Init& init) {
-  return {
-      {"type", "init"}, {"node_id", init.node_id}, {"node_ids", init.node_ids}};
+  return {{"type", "init"},
+          {"node_id", init.node_id.ToString()},
+          {"node_ids", ToString(init.node_ids)}};
 }
 
 Json Serialize(const InitOk& init_ok) { return {{"type", "init_ok"}}; }
@@ -157,11 +168,11 @@ Json Serialize(const GenerateOk& generate_ok) {
 }
 
 Json Serialize(const Broadcast& broadcast) {
-  return {{"type", "broadcast"}, {"message", broadcast.message}};
+  return {{"type", "broadcast"}, {"message", broadcast.number}};
 }
 
 Json Serialize(const BulkBroadcast& bulk_broadcast) {
-  return {{"type", "bulk_broadcast"}, {"messages", bulk_broadcast.messages}};
+  return {{"type", "bulk_broadcast"}, {"messages", bulk_broadcast.numbers}};
 }
 
 Json Serialize(const BroadcastOk& broadcast_ok) {
@@ -171,11 +182,17 @@ Json Serialize(const BroadcastOk& broadcast_ok) {
 Json Serialize(const Read& read) { return {{"type", "read"}}; }
 
 Json Serialize(const ReadOk& read_ok) {
-  return {{"type", "read_ok"}, {"messages", read_ok.messages}};
+  return {{"type", "read_ok"}, {"messages", read_ok.numbers}};
 }
 
 Json Serialize(const Topology& topology) {
-  return {{"type", "topology"}, {"topology", topology.topology}};
+  Json j_topology = {{"type", "topology"}};
+  for (const auto& [v, us] : topology.topology) {
+    for (const auto u : us) {
+      j_topology[v.ToString()].push_back(u.ToString());
+    }
+  }
+  return j_topology;
 }
 
 Json Serialize(const TopologyOk& topology_ok) {
@@ -187,8 +204,9 @@ Json Serialize(const Body& body) {
 }
 
 Json Serialize(const Message& msg) {
-  Json j_msg = {
-      {"src", msg.src}, {"dest", msg.dest}, {"body", Serialize(msg.body)}};
+  Json j_msg = {{"src", msg.src.ToString()},
+                {"dest", msg.dest.ToString()},
+                {"body", Serialize(msg.body)}};
   if (msg.msg_id) {
     j_msg["body"]["msg_id"] = *msg.msg_id;
   }

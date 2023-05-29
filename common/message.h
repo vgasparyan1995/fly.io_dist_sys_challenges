@@ -1,15 +1,15 @@
 #pragma once
 
 #include <optional>
-#include <string>
 #include <variant>
 #include <vector>
 
 #include "graph_utils.h"
+#include "ids.h"
 
 struct Init {
-  std::string node_id;
-  std::vector<std::string> node_ids;
+  NodeId node_id;
+  std::vector<NodeId> node_ids;
 };
 struct InitOk {};
 
@@ -26,20 +26,20 @@ struct GenerateOk {
 };
 
 struct Broadcast {
-  int message = 0;
+  int number = 0;
 };
 struct BulkBroadcast {
-  std::vector<int> messages;
+  std::vector<int> numbers;
 };
 struct BroadcastOk {};
 
 struct Read {};
 struct ReadOk {
-  std::vector<int> messages;
+  std::vector<int> numbers;
 };
 
 struct Topology {
-  AdjacencyList<std::string> topology;
+  AdjacencyList<NodeId> topology;
 };
 struct TopologyOk {};
 
@@ -48,9 +48,9 @@ using Body = std::variant<Init, InitOk, Echo, EchoOk, Generate, GenerateOk,
                           Topology, TopologyOk>;
 
 struct Message {
-  std::string src;
-  std::string dest;
-  std::optional<int> msg_id;
-  std::optional<int> in_reply_to;
+  NodeId src;
+  NodeId dest;
+  std::optional<MsgId> msg_id;
+  std::optional<MsgId> in_reply_to;
   Body body;
 };

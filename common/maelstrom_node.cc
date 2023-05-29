@@ -55,7 +55,7 @@ std::optional<Message> MaelstromNode::Receive() {
   return {};
 }
 
-int MaelstromNode::Send(Message msg) {
+MsgId MaelstromNode::Send(Message msg) {
   if (msg.dest == id_) {
     std::swap(msg.src, msg.dest);
     msg.in_reply_to = msg.msg_id;

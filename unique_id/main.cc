@@ -18,8 +18,8 @@ int main() {
       continue;
     }
     if (std::get_if<Generate>(&msg->body)) {
-      msg->body = GenerateOk{
-          .id = std::hash<std::string_view>{}(maelstrom_node.Id()) ^ id++};
+      msg->body =
+          GenerateOk{.id = std::hash<NodeId>{}(maelstrom_node.Id()) ^ id++};
       maelstrom_node.Send(*msg);
       continue;
     }

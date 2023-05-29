@@ -6,10 +6,17 @@ cc_library(
 )
 
 cc_library(
+    name = "ids",
+    hdrs = ["ids.h"],
+    srcs = ["ids.cc"],
+)
+
+cc_library(
     name = "message",
     hdrs = ["message.h"],
     deps = [
         ":graph_utils",
+        ":ids",
     ],
 )
 

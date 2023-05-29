@@ -11,8 +11,8 @@
 
 inline constexpr auto kBroadcastInterval = std::chrono::milliseconds(1000);
 
-Broadcaster::Broadcaster(MaelstromNode& maelstrom_node, std::string dest_node)
-    : maelstrom_node_(maelstrom_node), dest_node_(std::move(dest_node)) {
+Broadcaster::Broadcaster(MaelstromNode& maelstrom_node, NodeId dest_node)
+    : maelstrom_node_(maelstrom_node), dest_node_(dest_node) {
   Start();
 }
 
@@ -32,7 +32,7 @@ void Broadcaster::Start() {
       const auto msg_id = maelstrom_node_.Send(
           Message{.src = maelstrom_node_.Id(),
                   .dest = dest_node_,
-                  .body = BulkBroadcast{.messages = std::vector<int>(
+                  .body = BulkBroadcast{.numbers = std::vector<int>(
                                             buffer_.begin(), buffer_.end())}});
       bulk_broadcast_history_.push({msg_id, buffer_});
     }
@@ -49,9 +49,9 @@ void Broadcaster::Stop() {
   }
 }
 
-void Broadcaster::AddMessages(const std::vector<int>& messages) {
+void Broadcaster::AddNumbers(const std::vector<int>& numbers) {
   std::scoped_lock l{mu_buffer_};
-  buffer_.insert(messages.begin(), messages.end());
+  buffer_.insert(numbers.begin(), numbers.end());
 }
 
 void Broadcaster::BroadcastReceived(int recv_msg_id) {

@@ -10,7 +10,7 @@
 #include "common/maelstrom_node.h"
 #include "common/message.h"
 
-AdjacencyList<std::string> ConstructTopology(MaelstromNode& maelstrom_node) {
+AdjacencyList<NodeId> ConstructTopology(MaelstromNode& maelstrom_node) {
   auto topology_msg = maelstrom_node.Receive();
   if (!topology_msg) {
     return {};
@@ -19,7 +19,7 @@ AdjacencyList<std::string> ConstructTopology(MaelstromNode& maelstrom_node) {
   if (!topology) {
     return {};
   }
-  std::set<Edge<std::string>> edges;
+  std::set<Edge<NodeId>> edges;
   for (const auto& [v, us] : topology->topology) {
     for (const auto& u : us) {
       if (v > u) {
@@ -46,8 +46,8 @@ int main() {
     return -1;
   }
 
-  std::unordered_set<int> messages;
-  std::unordered_map<std::string, Broadcaster> broadcasters;
+  std::unordered_set<int> numbers;
+  std::unordered_map<NodeId, Broadcaster> broadcasters;
   for (const auto& neighbor : node_graph[node.Id()]) {
     broadcasters.emplace(std::piecewise_construct,
                          std::forward_as_tuple(neighbor),
@@ -60,21 +60,21 @@ int main() {
       continue;
     }
     if (auto* broadcast = std::get_if<Broadcast>(&msg->body)) {
-      messages.insert(broadcast->message);
+      numbers.insert(broadcast->number);
       for (auto& [_, broadcaster] : broadcasters) {
-        std::vector<int> messages = {broadcast->message};
-        broadcaster.AddMessages(messages);
+        std::vector<int> numbers = {broadcast->number};
+        broadcaster.AddNumbers(numbers);
       }
       msg->body = BroadcastOk{};
       node.Send(*msg);
     } else if (auto* bulk_broadcast = std::get_if<BulkBroadcast>(&msg->body)) {
-      messages.insert(bulk_broadcast->messages.begin(),
-                      bulk_broadcast->messages.end());
-      for (auto& [node, broadcaster] : broadcasters) {
-        if (node == msg->src) {
+      numbers.insert(bulk_broadcast->numbers.begin(),
+                     bulk_broadcast->numbers.end());
+      for (auto& [node_id, broadcaster] : broadcasters) {
+        if (node_id == msg->src) {
           continue;
         }
-        broadcaster.AddMessages(bulk_broadcast->messages);
+        broadcaster.AddNumbers(bulk_broadcast->numbers);
       }
       msg->body = BroadcastOk{};
       node.Send(*msg);
@@ -83,8 +83,8 @@ int main() {
         it->second.BroadcastReceived(msg->in_reply_to.value_or(-1));
       }
     } else if (std::get_if<Read>(&msg->body)) {
-      msg->body = ReadOk{
-          .messages = std::vector<int>(messages.begin(), messages.end())};
+      msg->body =
+          ReadOk{.numbers = std::vector<int>(numbers.begin(), numbers.end())};
       node.Send(*msg);
     } else {
       std::cerr << "Unexpected message.\n";
