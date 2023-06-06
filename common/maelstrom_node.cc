@@ -37,7 +37,7 @@ bool MaelstromNode::Initialize() {
   if (!init) {
     return false;
   }
-  id_ = std::move(init->node_id);
+  id_ = init->node_id;
   nodes_ = std::move(init->node_ids);
   msg->body = InitOk{};
   Send(std::move(*msg));

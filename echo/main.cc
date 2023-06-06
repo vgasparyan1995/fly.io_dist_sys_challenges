@@ -1,6 +1,7 @@
 #include <iostream>
 #include <variant>
 
+#include "common/json_utils.h"
 #include "common/maelstrom_node.h"
 
 int main() {
@@ -20,6 +21,6 @@ int main() {
       maelstrom_node.Send(*msg);
       continue;
     }
-    std::cerr << "Unexpected request.\n";
+    std::cerr << "Unexpected request:" << Serialize(*msg).dump() << "\n";
   }
 }

@@ -1,10 +1,18 @@
 #include "ids.h"
 
-NodeId::NodeId(const std::string& node_id) {
-  std::from_chars(node_id.c_str() + 1, node_id.c_str() + node_id.size(), id_);
+#include <string>
+
+NodeId::NodeId(std::string_view node_id) {
+  type_ = node_id.starts_with('n') ? NodeType::kServer : NodeType::kClient;
+  std::from_chars(node_id.data() + 1, node_id.data() + node_id.size(), id_);
 }
 
-std::string NodeId::ToString() const { return "n" + std::to_string(id_); }
+NodeId::NodeId(const std::string& node_id)
+    : NodeId(std::string_view(node_id)) {}
+
+std::string NodeId::ToString() const {
+  return (type_ == NodeType::kServer ? "n" : "c") + std::to_string(id_);
+}
 
 std::vector<std::string> ToString(const std::vector<NodeId>& node_ids) {
   std::vector<std::string> result(node_ids.size());
