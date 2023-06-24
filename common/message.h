@@ -28,10 +28,12 @@ struct GenerateOk {
 struct Broadcast {
   int number = 0;
 };
-struct BulkBroadcast {
+struct BroadcastOk {};
+
+struct Gossip {
   std::vector<int> numbers;
 };
-struct BroadcastOk {};
+struct GossipOk {};
 
 struct Read {};
 struct ReadOk {
@@ -44,8 +46,8 @@ struct Topology {
 struct TopologyOk {};
 
 using Body = std::variant<Init, InitOk, Echo, EchoOk, Generate, GenerateOk,
-                          Broadcast, BulkBroadcast, BroadcastOk, Read, ReadOk,
-                          Topology, TopologyOk>;
+                          Broadcast, BroadcastOk, Gossip, GossipOk, Read,
+                          ReadOk, Topology, TopologyOk>;
 
 struct Message {
   NodeId src;

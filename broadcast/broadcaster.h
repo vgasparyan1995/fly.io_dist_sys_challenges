@@ -16,21 +16,17 @@
 class Broadcaster {
  public:
   Broadcaster(MaelstromNode& maelstrom_node, NodeId dest_node);
-  ~Broadcaster();
 
   void AddNumbers(const std::vector<int>& numbers);
-  void BroadcastReceived(MsgId recv_msg_id);
+  void GossipReceived(MsgId in_reply_to);
 
  private:
-  void Start();
-  void Stop();
+  void DoGossip(bool repeat);
 
   MaelstromNode& maelstrom_node_;
   const NodeId dest_node_;
-  std::thread periodic_broadcaster_;
-  std::mutex mu_buffer_;
-  std::unordered_set<int> buffer_;  // Guarded by mu_buffer_
-  std::queue<std::pair<MsgId, std::unordered_set<int>>>
-      bulk_broadcast_history_;  // Guarded by mu_buffer_
-  bool stopped_ = false;        // Guarded by mu_buffer_
+  std::jthread periodic_gossip_;
+  std::mutex mu_;
+  std::optional<std::pair<MsgId, Gossip>> last_gossip_;  // Guarded by mu_
+  std::set<int> numbers_to_gossip_;                      // Guarded by mu_
 };
