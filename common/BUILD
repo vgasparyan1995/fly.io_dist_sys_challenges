@@ -25,6 +25,15 @@ cc_library(
     hdrs = ["graph_utils.h"],
 )
 
+cc_test(
+    name = "graph_utils_test",
+    srcs = ["graph_utils_test.cc"],
+    deps = [
+        ":graph_utils",
+        "@com_google_googletest//:gtest_main",
+    ],
+)
+
 cc_library(
     name = "json_utils",
     hdrs = ["json_utils.h"],

@@ -11,18 +11,38 @@ template <typename T>
 using Edge = std::pair<T, T>;
 
 template <typename T>
-AdjacencyList<T> MinimumSpanningTree(std::set<Edge<T>>&& edges) {
+class DisjointSet {
+ public:
+  T Parent(T v) {
+    if (!parents_.contains(v)) {
+      parents_.insert({v, v});
+      return v;
+    }
+    T parent = v;
+    while (parent != parents_[parent]) {
+      parent = parents_[parent];
+    }
+    parents_[v] = parent;
+    return parent;
+  }
+
+  void Join(T v, T u) { parents_[Parent(v)] = Parent(u); }
+
+ private:
+  std::unordered_map<T, T> parents_;
+};
+
+template <typename T>
+AdjacencyList<T> MinimumSpanningTree(const std::set<Edge<T>>& edges) {
   AdjacencyList<T> graph;
-  std::unordered_map<T, T> parent;
+  DisjointSet<T> vertices;
   for (auto [v, u] : edges) {
-    parent.insert({v, v});
-    parent.insert({u, u});
-    if (parent[v] == parent[u]) {
+    if (vertices.Parent(v) == vertices.Parent(u)) {
       continue;
     }
     graph[v].insert(u);
     graph[u].insert(v);
-    parent[parent[v]] = parent[u];
+    vertices.Join(v, u);
   }
   return graph;
 }
