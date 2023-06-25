@@ -35,6 +35,21 @@ cc_test(
 )
 
 cc_library(
+    name = "thread_pool",
+    hdrs = ["thread_pool.h"],
+    srcs = ["thread_pool.cc"],
+)
+
+cc_test(
+    name = "thread_pool_test",
+    srcs = ["thread_pool_test.cc"],
+    deps = [
+        ":thread_pool",
+        "@com_google_googletest//:gtest_main",
+    ],
+)
+
+cc_library(
     name = "json_utils",
     hdrs = ["json_utils.h"],
     srcs = ["json_utils.cc"],
