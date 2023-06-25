@@ -1,7 +1,5 @@
 #include "common/graph_utils.h"
 
-#include <bits/ranges_algo.h>
-
 #include <numeric>
 
 #include "gtest/gtest.h"

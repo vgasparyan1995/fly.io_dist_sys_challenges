@@ -10,8 +10,12 @@
 #include "common/maelstrom_node.h"
 #include "common/message.h"
 
+namespace {
+
 inline constexpr auto kBroadcastInterval = std::chrono::milliseconds(50);
 inline constexpr auto kExpectedRtt = std::chrono::milliseconds(250);
+
+}  // namespace
 
 Broadcaster::Broadcaster(MaelstromNode& maelstrom_node, NodeId dest_node)
     : maelstrom_node_(maelstrom_node),
@@ -30,12 +34,12 @@ Broadcaster::Broadcaster(MaelstromNode& maelstrom_node, NodeId dest_node)
       }) {}
 
 void Broadcaster::AddNumbers(const std::vector<int>& numbers) {
-  std::scoped_lock l{mu_};
+  std::unique_lock lck{mu_};
   numbers_to_gossip_.insert(numbers.begin(), numbers.end());
 }
 
 void Broadcaster::GossipReceived(MsgId in_reply_to) {
-  std::scoped_lock l{mu_};
+  std::unique_lock lck{mu_};
   if (!last_gossip_ || last_gossip_->first != in_reply_to) {
     return;
   }
@@ -46,7 +50,7 @@ void Broadcaster::GossipReceived(MsgId in_reply_to) {
 }
 
 void Broadcaster::DoGossip(bool repeat) {
-  std::scoped_lock l{mu_};
+  std::unique_lock lck{mu_};
   if (numbers_to_gossip_.empty()) {
     return;
   }

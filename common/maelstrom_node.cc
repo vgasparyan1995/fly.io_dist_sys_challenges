@@ -61,7 +61,7 @@ MsgId MaelstromNode::Send(Message msg) {
     msg.in_reply_to = msg.msg_id;
   }
   {
-    std::scoped_lock l{mu_send_};
+    std::unique_lock lck{mu_send_};
     msg.msg_id = msg_id_++;
     WriteToStdOut(Serialize(msg));
   }
