@@ -54,57 +54,76 @@ int main() {
                          std::forward_as_tuple(node, neighbor));
   }
 
-  while (true) {
-    auto msg = node.Receive();
-    if (!msg) {
-      continue;
-    }
-    if (auto* broadcast = std::get_if<Broadcast>(&msg->body)) {
-      const auto number = broadcast->number;
-      msg->body = BroadcastOk{};
-      node.Send(*msg);
+  node.AddHandler<Broadcast>([&numbers, &broadcasters](Message msg) {
+    auto& broadcast = std::get<Broadcast>(msg.body);
+    const auto number = broadcast.number;
+    msg.body = BroadcastOk{};
 
-      auto [_, is_new_number] = numbers.insert(number);
-      if (!is_new_number) {
+    // TODO! 'numbers' must be locked
+    auto [_, is_new_number] = numbers.insert(number);
+    if (!is_new_number) {
+      return msg;
+    }
+    for (auto& [_, broadcaster] : broadcasters) {
+      broadcaster.AddNumbers({broadcast.number});
+    }
+
+    return msg;
+  });
+
+  node.StartReceiving();
+
+  /*
+    while (true) {
+      auto msg = node.Receive();
+      if (!msg) {
         continue;
       }
-      for (auto& [_, broadcaster] : broadcasters) {
-        broadcaster.AddNumbers({broadcast->number});
-      }
-    } else if (auto* gossip = std::get_if<Gossip>(&msg->body)) {
-      std::vector<int> new_numbers = std::move(gossip->numbers);
-      msg->body = GossipOk{};
-      node.Send(*msg);
+      if (auto* broadcast = std::get_if<Broadcast>(&msg->body)) {
+        const auto number = broadcast->number;
+        msg->body = BroadcastOk{};
+        node.Send(*msg);
 
-      new_numbers.erase(
-          std::remove_if(new_numbers.begin(), new_numbers.end(),
-                         [&numbers](int num) { return numbers.contains(num); }),
-          new_numbers.end());
-      numbers.insert(new_numbers.begin(), new_numbers.end());
-      for (auto& [node_id, broadcaster] : broadcasters) {
-        if (node_id == msg->src) {
+        auto [_, is_new_number] = numbers.insert(number);
+        if (!is_new_number) {
           continue;
         }
-        broadcaster.AddNumbers(new_numbers);
+        for (auto& [_, broadcaster] : broadcasters) {
+          broadcaster.AddNumbers({broadcast->number});
+        }
+      } else if (auto* gossip = std::get_if<Gossip>(&msg->body)) {
+        std::vector<int> new_numbers = std::move(gossip->numbers);
+        msg->body = GossipOk{};
+        node.Send(*msg);
+
+        new_numbers.erase(
+            std::remove_if(new_numbers.begin(), new_numbers.end(),
+                           [&numbers](int num) { return numbers.contains(num);
+    }), new_numbers.end()); numbers.insert(new_numbers.begin(),
+    new_numbers.end()); for (auto& [node_id, broadcaster] : broadcasters) { if
+    (node_id == msg->src) { continue;
+          }
+          broadcaster.AddNumbers(new_numbers);
+        }
+      } else if (std::get_if<GossipOk>(&msg->body)) {
+        auto it = broadcasters.find(msg->src);
+        if (it == broadcasters.end()) {
+          std::cerr << "Broadcaster for node " << msg->src.ToString()
+                    << " not found.";
+          std::exit(-1);
+        }
+        if (!msg->in_reply_to) {
+          std::cerr << "GossipOk must be in response to some message.";
+          std::exit(-1);
+        }
+        it->second.GossipReceived(msg->in_reply_to.value());
+      } else if (std::get_if<Read>(&msg->body)) {
+        msg->body =
+            ReadOk{.numbers = std::vector<int>(numbers.begin(), numbers.end())};
+        node.Send(*msg);
+      } else {
+        std::cerr << "Unexpected message.\n";
       }
-    } else if (std::get_if<GossipOk>(&msg->body)) {
-      auto it = broadcasters.find(msg->src);
-      if (it == broadcasters.end()) {
-        std::cerr << "Broadcaster for node " << msg->src.ToString()
-                  << " not found.";
-        std::exit(-1);
-      }
-      if (!msg->in_reply_to) {
-        std::cerr << "GossipOk must be in response to some message.";
-        std::exit(-1);
-      }
-      it->second.GossipReceived(msg->in_reply_to.value());
-    } else if (std::get_if<Read>(&msg->body)) {
-      msg->body =
-          ReadOk{.numbers = std::vector<int>(numbers.begin(), numbers.end())};
-      node.Send(*msg);
-    } else {
-      std::cerr << "Unexpected message.\n";
     }
-  }
+    */
 }

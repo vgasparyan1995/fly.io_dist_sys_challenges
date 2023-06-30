@@ -68,3 +68,7 @@ std::optional<Message> MaelstromNode::Receive() {
   }
   return {};
 }
+
+void MaelstromNode::StartReceiving() {
+  // TODO! set up the thread pool
+}

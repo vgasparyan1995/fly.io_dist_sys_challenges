@@ -33,7 +33,7 @@ class MaelstromNode {
 
   template <typename BodyT>
   void AddHandler(Handler&& handler) {
-    handlers_[VariantIndex<BodyT>()] = std::move(handler);
+    handlers_[body_index_v<BodyT>] = std::move(handler);
   }
 
   NodeId Id() const { return id_; }
