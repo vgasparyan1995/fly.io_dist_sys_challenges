@@ -44,17 +44,6 @@ bool MaelstromNode::Initialize() {
   return true;
 }
 
-std::optional<Message> MaelstromNode::Receive() {
-  if (auto j_msg = ReadFromStdIn(); j_msg) {
-    auto msg = MessageFrom(*j_msg);
-    if (!msg) {
-      std::cerr << "Unsupported request: " << j_msg->dump() << '\n';
-    }
-    return msg;
-  }
-  return {};
-}
-
 MsgId MaelstromNode::Send(Message msg) {
   if (msg.dest == id_) {
     std::swap(msg.src, msg.dest);
@@ -66,4 +55,16 @@ MsgId MaelstromNode::Send(Message msg) {
     WriteToStdOut(Serialize(msg));
   }
   return msg.msg_id.value_or(-1);
+}
+
+std::optional<Message> MaelstromNode::Receive() {
+  std::unique_lock lck{mu_receive_};
+  if (auto j_msg = ReadFromStdIn(); j_msg) {
+    auto msg = MessageFrom(*j_msg);
+    if (!msg) {
+      std::cerr << "Unsupported request: " << j_msg->dump() << '\n';
+    }
+    return msg;
+  }
+  return {};
 }

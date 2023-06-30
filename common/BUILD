@@ -50,7 +50,14 @@ cc_test(
 )
 
 cc_library(
-    name = "json_utils",
+    name = "type_utils",
+    hdrs = ["type_utils.h"],
+    deps = [
+        ":message",
+    ],
+)
+
+cc_library( name = "json_utils",
     hdrs = ["json_utils.h"],
     srcs = ["json_utils.cc"],
     deps = [
@@ -66,6 +73,8 @@ cc_library(
     srcs = ["maelstrom_node.cc"],
     deps = [
         ":json_utils",
-        ":message"
+        ":message",
+        ":thread_pool",
+        ":type_utils",
     ],
 )
