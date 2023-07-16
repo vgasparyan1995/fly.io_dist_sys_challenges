@@ -51,3 +51,17 @@ TEST_F(ThreadPoolTest, DefaultNumThreads) {
   EXPECT_EQ(started_.size(), 2);
   EXPECT_EQ(finished_.size(), 2);
 }
+
+TEST_F(ThreadPoolTest, DestructWithPendingTasks) {
+  {
+    ThreadPool thread_pool(2);
+    thread_pool.AddTask(NewTask(0));
+    thread_pool.AddTask(NewTask(1));
+    thread_pool.AddTask(NewTask(2));
+    std::this_thread::sleep_for(std::chrono::seconds(2));
+    EXPECT_EQ(started_.size(), 2);
+    EXPECT_EQ(finished_.size(), 0);
+  }
+  EXPECT_EQ(started_.size(), 2);
+  EXPECT_EQ(finished_.size(), 2);
+}
