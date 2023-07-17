@@ -19,8 +19,6 @@ class ThreadPool {
   void AddTask(Task&& task);
 
  private:
-  std::optional<Task> NextTask();
-
   std::vector<std::jthread> workers_;
   std::mutex mu_tasks_;
   std::queue<Task> tasks_;
