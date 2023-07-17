@@ -30,7 +30,10 @@ ThreadPool::ThreadPool(int num_threads) {
               return;
             }
           }
-          task = NextTask();
+          if (!tasks_.empty()) {
+            task = std::move(tasks_.front());
+            tasks_.pop();
+          }
         }
         if (task) {
           (*task)();
@@ -52,15 +55,4 @@ void ThreadPool::AddTask(Task&& task) {
   std::unique_lock lck{mu_tasks_};
   tasks_.push(std::move(task));
   cond_var_.notify_one();
-}
-
-std::optional<ThreadPool::Task> ThreadPool::NextTask() {
-  assert(!mu_tasks_.try_lock());
-  std::optional<Task> next_task;
-  if (tasks_.empty()) {
-    return next_task;
-  }
-  next_task = std::move(tasks_.front());
-  tasks_.pop();
-  return next_task;
 }
