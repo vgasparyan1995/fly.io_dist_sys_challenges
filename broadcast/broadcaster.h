@@ -21,7 +21,7 @@ class Broadcaster {
   void GossipReceived(MsgId in_reply_to);
 
  private:
-  void DoGossip(bool repeat);
+  void DoGossip();
 
   MaelstromNode& maelstrom_node_;
   const NodeId dest_node_;

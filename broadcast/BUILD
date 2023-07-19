@@ -4,6 +4,17 @@ cc_binary(
     deps = [
         "//common:maelstrom_node",
         ":broadcaster",
+        ":handlers",
+    ],
+)
+
+cc_library(
+    name = "handlers",
+    hdrs = ["handlers.h"],
+    srcs = ["handlers.cc"],
+    deps = [
+        "//common:ids",
+        ":broadcaster",
     ],
 )
 

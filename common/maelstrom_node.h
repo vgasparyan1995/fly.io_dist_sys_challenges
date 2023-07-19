@@ -47,6 +47,5 @@ class MaelstromNode {
   std::mutex mu_receive_;
   MsgId msg_id_ = 0;
   ThreadPool thread_pool_;
-  std::mutex mu_handlers_;
   std::array<Handler, std::variant_size_v<Body>> handlers_;
 };

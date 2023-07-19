@@ -24,7 +24,7 @@ std::optional<Json> ReadFromStdIn() {
   return json_msg;
 }
 
-void WriteToStdOut(Json msg) { std::cout << msg.dump() << '\n'; }
+void WriteToStdOut(Json msg) { std::cout << msg.dump() << std::endl; }
 
 }  // namespace
 
@@ -70,5 +70,21 @@ std::optional<Message> MaelstromNode::Receive() {
 }
 
 void MaelstromNode::StartReceiving() {
-  // TODO! set up the thread pool
+  while (true) {
+    auto msg = Receive();
+    if (!msg) {
+      continue;
+    }
+    thread_pool_.AddTask([this, message = std::move(*msg)]() {
+      auto& handler = handlers_[message.body.index()];
+      if (!handler) {
+        std::cerr << "Message of type (idx): " << message.body.index()
+                  << " does not have a handler.\n";
+      }
+      auto reply = handler(std::move(message));
+      if (reply) {
+        Send(*reply);
+      }
+    });
+  }
 }

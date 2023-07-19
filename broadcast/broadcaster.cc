@@ -12,8 +12,7 @@
 
 namespace {
 
-inline constexpr auto kBroadcastInterval = std::chrono::milliseconds(50);
-inline constexpr auto kExpectedRtt = std::chrono::milliseconds(250);
+inline constexpr auto kBroadcastInterval = std::chrono::milliseconds(300);
 
 }  // namespace
 
@@ -21,15 +20,9 @@ Broadcaster::Broadcaster(MaelstromNode& maelstrom_node, NodeId dest_node)
     : maelstrom_node_(maelstrom_node),
       dest_node_(dest_node),
       periodic_gossip_([this](std::stop_token stoken) {
-        const int num_max_repeat = kExpectedRtt / kBroadcastInterval;
-        int num_repeat = 0;
         while (!stoken.stop_requested()) {
-          const bool do_repeat = (num_repeat++ > num_max_repeat);
-          DoGossip(do_repeat);
+          DoGossip();
           std::this_thread::sleep_for(kBroadcastInterval);
-          if (do_repeat) {
-            num_repeat = 0;
-          }
         }
       }) {}
 
@@ -49,12 +42,12 @@ void Broadcaster::GossipReceived(MsgId in_reply_to) {
   last_gossip_ = std::nullopt;
 }
 
-void Broadcaster::DoGossip(bool repeat) {
+void Broadcaster::DoGossip() {
   std::unique_lock lck{mu_};
   if (numbers_to_gossip_.empty()) {
     return;
   }
-  if (!repeat && last_gossip_) {
+  if (last_gossip_) {
     return;
   }
   Gossip gossip;
