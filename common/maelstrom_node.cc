@@ -68,23 +68,3 @@ std::optional<Message> MaelstromNode::Receive() {
   }
   return {};
 }
-
-void MaelstromNode::StartReceiving() {
-  while (true) {
-    auto msg = Receive();
-    if (!msg) {
-      continue;
-    }
-    thread_pool_.AddTask([this, message = std::move(*msg)]() {
-      auto& handler = handlers_[message.body.index()];
-      if (!handler) {
-        std::cerr << "Message of type (idx): " << message.body.index()
-                  << " does not have a handler.\n";
-      }
-      auto reply = handler(std::move(message));
-      if (reply) {
-        Send(*reply);
-      }
-    });
-  }
-}

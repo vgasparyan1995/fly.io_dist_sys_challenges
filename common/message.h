@@ -31,13 +31,13 @@ struct Broadcast {
 struct BroadcastOk {};
 
 struct Gossip {
-  std::vector<int> numbers;
+  std::unordered_set<int> numbers;
 };
 struct GossipOk {};
 
 struct Read {};
 struct ReadOk {
-  std::vector<int> numbers;
+  std::unordered_set<int> numbers;
 };
 
 struct Topology {
